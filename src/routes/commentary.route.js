@@ -20,12 +20,10 @@ commentaryRouter.get("/", async (req, res) => {
   }
   const queryResult = listCommentaryQuerySchema.safeParse(req.query);
   if (!queryResult.success) {
-    return res
-      .status(400)
-      .json({
-        error: "Invalid query parameters",
-        details: queryResult.error.issues,
-      });
+    return res.status(400).json({
+      error: "Invalid query parameters",
+      details: queryResult.error.issues,
+    });
   }
   try {
     const limit = queryResult.data.limit || 100;
@@ -55,17 +53,17 @@ commentaryRouter.post("/", async (req, res) => {
       .json({ error: "Invalid payload", details: bodyResult.error.issues });
   }
   try {
-    console.log(bodyResult.data);
-    console.log(paramsResult.data);
-    const result = await db
+    const [result] = await db
       .insert(commentary)
       .values({
         matchId: paramsResult.data.id,
         ...bodyResult.data,
       })
       .returning();
-
-    res.status(201).json({ data: result[0] });
+    if (res.app.locals.broadcastCommentary) {
+      res.app.locals.broadcastCommentary(result.matchId, result);
+    }
+    res.status(201).json({ data: result });
   } catch (error) {
     console.log(error);
     if (error instanceof z.ZodError) {
