@@ -2,6 +2,7 @@ import express from "express";
 import { matchRouter } from "./routes/matches.route.js";
 import http from "http";
 import { attachWebSocketServer } from "./ws/server.js";
+import { globalLimiter } from "./rate-limiter/global-limiter.js";
 
 const PORT = process.env.PORT || 8000;
 const HOST = process.env.HOST || "0.0.0.0";
@@ -10,6 +11,8 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(express.json());
+
+app.use(globalLimiter);
 
 app.get("/", (req, res) => {
   res.json({ success: true, message: "Server is running..." });
